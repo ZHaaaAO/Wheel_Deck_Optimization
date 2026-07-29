@@ -274,29 +274,51 @@ def main():
     ])
 
     st.sidebar.header("Algorithm Settings")
-    individuals = st.sidebar.number_input("Population Size =", value=100, min_value=10)
-    gen = st.sidebar.number_input("Max iterations =", value=30, min_value=1)
-    D_val = st.sidebar.number_input("**D** (Width for linear calc) =", value=30.0, step=1.0)
-    l_min = st.sidebar.number_input("**l_min** =", value=2000.0, step=10.0)
-    l_max = st.sidebar.number_input("**l_max** =", value=3500.0, step=10.0)
-    b_min = st.sidebar.number_input("**b_min** =", value=400.0, step=10.0)
-    b_max = st.sidebar.number_input("**b_max** =", value=800.0, step=10.0)
-    l_step = st.sidebar.number_input("**l_step** =", value=10.0, step=1.0)
-    b_step = st.sidebar.number_input("**b_step** =", value=5.0, step=1.0)
+    
+    col_pop, col_gen = st.sidebar.columns(2)
+    with col_pop: individuals = st.number_input("Pop Size =", value=100, min_value=10,help="The number of candidate solutions per generation. A larger population maintains diversity and prevents premature convergence.")
+    with col_gen: gen = st.number_input("Max Gen =", value=30, min_value=1, help="The number of generations for the GA. Larger values increase the chance of finding the global optimum but require more computation time.")
+    
+    D_val = st.sidebar.number_input("**D** (Deck Width) =", value=30.0, step=1.0)
+    
+    # Span (l) 的范围区间
+    st.sidebar.markdown("**Span Range (l)**")
+    col_l1, col_l2 = st.sidebar.columns(2)
+    with col_l1: l_min = st.number_input("Min (l_min)", value=2000.0, step=10.0)
+    with col_l2: l_max = st.number_input("Max (l_max)", value=3500.0, step=10.0)
+
+    # Spacing (b) 的范围区间
+    st.sidebar.markdown("**Spacing Range (b)**")
+    col_b1, col_b2 = st.sidebar.columns(2)
+    with col_b1: b_min = st.number_input("Min (b_min)", value=400.0, step=10.0)
+    with col_b2: b_max = st.number_input("Max (b_max)", value=800.0, step=10.0)
+    
+    # 搜索步长也并排
+    st.sidebar.markdown("**Search Steps**")
+    col_s1, col_s2 = st.sidebar.columns(2)
+    with col_s1: l_step = st.number_input("l_step", value=10.0, step=1.0)
+    with col_s2: b_step = st.number_input("b_step", value=5.0, step=1.0)
 
     st.sidebar.markdown("---")
+    
+    # 系数项也可以分成两列，使其更加紧凑
     st.sidebar.header("Calculation Coefficients")
-    alphas = st.sidebar.selectbox("**αs** =", [0.00, 1.00], index=1)
-    betas = st.sidebar.selectbox("**βs** =", [0.85, 0.95, 1.00, 1.10, 1.15, 1.20], index=1)
-    Cs_max = st.sidebar.selectbox("**Cs_max** =", [0.85, 0.95, 1.00, 1.15], index=0)
-    Ca_max = st.sidebar.selectbox("**Ca_max** =", [1.80, 2.00], index=0)
-    alphaa = st.sidebar.selectbox("**αa** =", [0.00, 0.50, 1.00], index=1)
-    betaa = st.sidebar.selectbox("**βa** =", [1.80, 1.90, 2.00, 2.10], index=1)
-    sigmahg = st.sidebar.number_input("**σhg** =", value=80.0)
-    g_val = st.sidebar.number_input("**g** =", value=9.81)
-    ReH = st.sidebar.selectbox("**ReH** =", [235.0, 315.0, 355.0, 390.0, 460.0], index=0)
-    az = st.sidebar.number_input("**az** =", value=4.5)
-
+    col_c1, col_c2 = st.sidebar.columns(2)
+    
+    with col_c1:
+        alphas = st.selectbox("**αs** =", [0.00, 1.00], index=1, help="DNV rule coefficient αs: Used to calculate the allowable stress coefficient Cs for stiffeners. It controls the reduction ratio of the global longitudinal bending stress on the stiffener's allowable stress.")
+        Cs_max = st.selectbox("**Cs_max** =", [0.85, 0.95, 1.00, 1.15], index=0, help="The upper limit for the stiffener allowable bending stress coefficient Cs. The rules specify Cs must not exceed this value.")
+        alphaa = st.selectbox("**αa** =", [0.00, 0.50, 1.00], index=1,help="DNV rule coefficient αa: Used to calculate the allowable stress coefficient Ca for plates, controlling the global longitudinal bending stress reduction.")
+        sigmahg = st.number_input("**σhg** =", value=80.0,help="The normal stress on the deck due to hull girder bending. Usually calculated from global longitudinal strength.")
+        ReH = st.selectbox("**ReH** =", [235.0, 315.0, 355.0, 390.0, 460.0], index=0,help="Yield limit of the steel.")
+        
+    with col_c2:
+        betas = st.selectbox("**βs** =", [0.85, 0.95, 1.00, 1.10, 1.15, 1.20], index=1,help="DNV rule coefficient βs: Base stress factor for stiffeners, determined by the load case (AC-I or AC-II).")
+        Ca_max = st.selectbox("**Ca_max** =", [1.80, 2.00], index=0, help="The upper limit for the deck plate allowable bending stress coefficient Ca.")
+        betaa = st.selectbox("**βa** =", [1.80, 1.90, 2.00, 2.10], index=1,help="DNV rule coefficient βa: Base stress factor for plates, determined by the load case (AC-I or AC-II).")
+        g_val = st.number_input("**g** =", value=9.81, help="Standard gravity acceleration, default is 9.81 m/s².")
+        az = st.number_input("**az** =", value=4.5,help="Wave-induced vertical acceleration of the ship in the 'At seas' load case. Used to calculate dynamic wheel loads."
+)
     if 'input_df' not in st.session_state:
         # 默认演示数据, 展示两层不同的载荷
         st.session_state.input_df = pd.DataFrame([
@@ -487,20 +509,15 @@ def main():
                 if st.button("Validate Custom Section"):
                     sel_row = valid_df.values[sel_deck_idx]
                     p_base = {'alphaa': alphaa, 'betaa': betaa, 'Ca_max': Ca_max, 'sigmahg': sigmahg, 'ReH': ReH, 'D': D_val, 'alphas': alphas, 'betas': betas, 'Cs_max': Cs_max}
-                    
                     # 调取需求参数
                     req_pe, req_pa, req_u = get_deck_reqs(man_l, man_b, sel_row, p_base, state_var, g_val, az)
-                    
                     # 计算实际参数
                     actual_z = calc_actual_section_modulus(custom_t, custom_h, custom_ts, man_b)
-                    
                     #输出实际值
                     st.success(f"**Actual Provided Dimensions:** Section Modulus **$Z_{{act}}$ = {actual_z:.2f} cm³** | Deck Thickness **$t$ = {custom_t:.1f} mm**")
-                    
                     #构建比对表格
                     def pass_fail(act, req):
-                        return "✅ Pass" if act >= req else "❌ Fail"
-                        
+                        return "✅ Pass" if act >= req else "❌ Fail"  
                     compare_data = [
                         {"Condition": "Perpendicular", 
                          "Req Z (cm³)": round(req_pe[0], 2), "Z Check": pass_fail(actual_z, req_pe[0]), 
